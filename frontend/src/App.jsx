@@ -417,7 +417,7 @@ const App = () => {
                 </div>
 
                 <div className="blueprint-body">
-                  <div className="algo-sidebar flex flex-col gap-8 relative z-10">
+                  <div className="algo-sidebar flex flex-col gap-8 relative z-50">
                     <div>
                         <div className="algo-label">
                         <Layers size={12} />
