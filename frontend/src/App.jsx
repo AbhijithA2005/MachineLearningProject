@@ -20,6 +20,32 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+const algoDescriptions = {
+  "Random Forest": "Ensemble • Decision Trees • High Accuracy • Feature Importance",
+  "Gradient Boosting (XGBoost/LGBM)": "Sequential Trees • Error Minimization • Tabular Data King",
+  "K-Means Clustering": "Centroids • Distance-based • Unlabeled Groupings",
+  "Principal Component Analysis (PCA)": "Dimensionality Reduction • Variance Maximization • Noise Filter",
+  "Isolation Forest": "Anomaly Detection • Outlier Isolation • Unsupervised Trees",
+  "Proximal Policy Optimization (PPO)": "Deep RL • Stable Updates • Continuous Control",
+  "Deep Q-Networks (DQN)": "Q-Learning • Value Approximation • Discrete Actions",
+  "Support Vector Machines (SVM)": "Margin Maximization • Hyperplanes • Classification",
+  "Logistic Regression": "Probability • Binary Outcomes • High Interpretability",
+  "Autoencoders": "Neural Networks • Reconstruction Loss • Latent Space",
+  "Transformers": "Self-Attention • Sequential Data • Deep Learning Model",
+  "LSTM": "Recurrent Neural Network • Time Series • Memory Cells",
+  "ARIMA": "Statistical Forecasting • Autoregressive • Moving Average",
+  "Generative Adversarial Networks (GANs)": "Generator vs Discriminator • Synthetic Data • Image Gen"
+};
+
+const getAlgoDescription = (algoName) => {
+  for (const [key, desc] of Object.entries(algoDescriptions)) {
+    if (algoName.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(algoName.toLowerCase())) {
+      return desc;
+    }
+  }
+  return "Statistical Model • Computational Inference • Pattern Recognition";
+};
+
 const App = () => {
   const [problem, setProblem] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,8 +53,10 @@ const App = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const recognitionRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     axios.get('/api/suggestions')
@@ -49,6 +77,14 @@ const App = () => {
       recognition.onend = () => setIsRecording(false);
       recognitionRef.current = recognition;
     }
+
+    const handleClickOutside = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const toggleRecording = () => {
@@ -66,6 +102,7 @@ const App = () => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setShowDropdown(false);
     try {
       const response = await axios.post('/api/predict', { description: problem });
       setResult(response.data);
@@ -81,7 +118,6 @@ const App = () => {
     if (!result) return;
     const doc = new jsPDF();
 
-    // Dark header bar
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 42, 'F');
     doc.setFillColor(99, 102, 241);
@@ -113,7 +149,6 @@ const App = () => {
     doc.text(lines, 20, y);
     y += lines.length * 6 + 10;
 
-    // Classification Box
     doc.setDrawColor(226, 232, 240);
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(20, y, 170, 32, 4, 4, 'FD');
@@ -132,7 +167,6 @@ const App = () => {
     doc.text(result.problem_complexity.toUpperCase(), 155, y + 11);
     y += 42;
 
-    // Justification
     addSectionTitle('STRATEGIC REASONING');
     doc.setTextColor(51, 65, 85);
     doc.setFontSize(10);
@@ -147,7 +181,6 @@ const App = () => {
     doc.text(lines, 20, y);
     y += lines.length * 5 + 10;
 
-    // Roadmap table
     doc.autoTable({
       startY: y,
       head: [['Phase', 'Strategic Action Item', 'Core Tech Stack']],
@@ -177,14 +210,10 @@ const App = () => {
     const pdfBlob = doc.output('blob');
 
     try {
-      // 1. Try modern File System Access API (forces the native OS save dialog)
       if (window.showSaveFilePicker) {
         const handle = await window.showSaveFilePicker({
           suggestedName: filename,
-          types: [{
-            description: 'PDF Document',
-            accept: { 'application/pdf': ['.pdf'] }
-          }],
+          types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
         });
         const writable = await handle.createWritable();
         await writable.write(pdfBlob);
@@ -192,10 +221,9 @@ const App = () => {
         return;
       }
     } catch (err) {
-      if (err.name === 'AbortError') return; // User cancelled the save dialog
+      if (err.name === 'AbortError') return;
     }
 
-    // 2. Fallback to anchor link if File System API is missing
     const blobUrl = URL.createObjectURL(pdfBlob);
     const link = document.createElement('a');
     link.href = blobUrl;
@@ -209,6 +237,10 @@ const App = () => {
   };
 
   const confidencePercent = result ? (result.confidence * 100).toFixed(0) : 0;
+
+  const filteredSuggestions = problem.trim().length > 0 
+    ? suggestions.filter(s => s.toLowerCase().includes(problem.toLowerCase()) && s.toLowerCase() !== problem.toLowerCase())
+    : [];
 
   return (
     <div>
@@ -233,7 +265,7 @@ const App = () => {
 
         {/* ---- Input ---- */}
         <motion.section
-          className="glass input-section"
+          className="glass input-section relative"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5 }}
@@ -251,12 +283,16 @@ const App = () => {
             )}
           </div>
 
-          <div className="input-wrapper">
+          <div className="input-wrapper" ref={inputRef}>
             <textarea
               className="input-area"
               placeholder="e.g., Predict customer churn based on historical usage metrics and demographics..."
               value={problem}
-              onChange={(e) => setProblem(e.target.value)}
+              onFocus={() => setShowDropdown(true)}
+              onChange={(e) => {
+                setProblem(e.target.value);
+                setShowDropdown(true);
+              }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePredict(); } }}
             />
             <button
@@ -266,6 +302,31 @@ const App = () => {
             >
               <Mic size={20} />
             </button>
+
+            {/* Autocomplete Dropdown */}
+            <AnimatePresence>
+              {showDropdown && filteredSuggestions.length > 0 && (
+                <motion.div 
+                  className="autocomplete-dropdown"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                >
+                  {filteredSuggestions.map((s, i) => (
+                    <div 
+                      key={i} 
+                      className="autocomplete-item"
+                      onClick={() => {
+                        setProblem(s);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      {s}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="action-bar">
@@ -304,7 +365,6 @@ const App = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
-              {/* Notifications */}
               {result.input_enhancement_suggestions && (
                 <div className="enhancement-chip mt-4 mb-6">
                     <Info size={16} className="text-blue-400" />
@@ -312,7 +372,6 @@ const App = () => {
                 </div>
               )}
 
-              {/* Meta Strip */}
               <div className="meta-strip">
                 <div className="meta-left relative">
                   <div className="complexity-badge absolute top-4 left-4 flex gap-1 items-center">
@@ -345,7 +404,6 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Blueprint Panel */}
               <div className="blueprint">
                 <div className="blueprint-header">
                   <div>
@@ -359,8 +417,7 @@ const App = () => {
                 </div>
 
                 <div className="blueprint-body">
-                  {/* Algorithms & Alternatives */}
-                  <div className="algo-sidebar flex flex-col gap-8">
+                  <div className="algo-sidebar flex flex-col gap-8 relative z-10">
                     <div>
                         <div className="algo-label">
                         <Layers size={12} />
@@ -370,13 +427,20 @@ const App = () => {
                         {result.algorithms.map((algo, i) => (
                             <motion.div
                             key={i}
-                            className="algo-item"
+                            className="algo-item group relative cursor-pointer"
                             initial={{ opacity: 0, x: -12 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1 + i * 0.07 }}
                             >
                             <span className="algo-number">{i + 1}</span>
                             {algo}
+                            
+                            {/* Hover Tooltip */}
+                            <div className="algo-tooltip group-hover:opacity-100 group-hover:visible">
+                                <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-1">ALGORITHM METRICS</span>
+                                <span className="text-xs text-slate-300 block">{getAlgoDescription(algo)}</span>
+                            </div>
+
                             </motion.div>
                         ))}
                         </div>
@@ -390,9 +454,15 @@ const App = () => {
                             </div>
                             <div className="algo-list opacity-80">
                             {result.alternative_approach.algorithms.map((algo, i) => (
-                                <motion.div key={i} className="algo-item p-2">
+                                <motion.div key={i} className="algo-item p-2 group relative cursor-pointer">
                                     <span className="text-xs text-amber-200/60 font-mono">ALT</span>
                                     {algo}
+
+                                    {/* Hover Tooltip */}
+                                    <div className="algo-tooltip group-hover:opacity-100 group-hover:visible border-amber-500/20">
+                                        <span className="text-[10px] uppercase font-bold text-amber-500 block mb-1">BACKUP APPROACH</span>
+                                        <span className="text-xs text-slate-300 block">{getAlgoDescription(algo)}</span>
+                                    </div>
                                 </motion.div>
                             ))}
                             </div>
@@ -400,7 +470,6 @@ const App = () => {
                     )}
                   </div>
 
-                  {/* Enhanced Roadmap */}
                   <div className="roadmap-panel">
                     <div className="roadmap-label">Execution Sequence</div>
                     <div className="roadmap-timeline">
@@ -432,7 +501,6 @@ const App = () => {
                 </div>
               </div>
               
-              {/* Similar Use Cases */}
               <div className="flex flex-wrap gap-4 items-center justify-center pt-4 opacity-50 mt-8 hover:opacity-100 transition-opacity duration-300">
                   <span className="text-xs font-bold uppercase tracking-widest">Similar Industry Use Cases:</span>
                   {result.similar_use_cases.map((uc, i) => (
@@ -444,7 +512,6 @@ const App = () => {
           )}
         </AnimatePresence>
 
-        {/* ---- Footer ---- */}
         <footer className="footer">
           <div className="footer-icons">
             <Zap size={18} />
