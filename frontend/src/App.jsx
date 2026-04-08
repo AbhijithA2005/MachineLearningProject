@@ -21,20 +21,20 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 const algoDescriptions = {
-  "Random Forest": "Ensemble • Decision Trees • High Accuracy • Feature Importance",
-  "Gradient Boosting (XGBoost/LGBM)": "Sequential Trees • Error Minimization • Tabular Data King",
-  "K-Means Clustering": "Centroids • Distance-based • Unlabeled Groupings",
-  "Principal Component Analysis (PCA)": "Dimensionality Reduction • Variance Maximization • Noise Filter",
-  "Isolation Forest": "Anomaly Detection • Outlier Isolation • Unsupervised Trees",
-  "Proximal Policy Optimization (PPO)": "Deep RL • Stable Updates • Continuous Control",
-  "Deep Q-Networks (DQN)": "Q-Learning • Value Approximation • Discrete Actions",
-  "Support Vector Machines (SVM)": "Margin Maximization • Hyperplanes • Classification",
-  "Logistic Regression": "Probability • Binary Outcomes • High Interpretability",
-  "Autoencoders": "Neural Networks • Reconstruction Loss • Latent Space",
-  "Transformers": "Self-Attention • Sequential Data • Deep Learning Model",
-  "LSTM": "Recurrent Neural Network • Time Series • Memory Cells",
-  "ARIMA": "Statistical Forecasting • Autoregressive • Moving Average",
-  "Generative Adversarial Networks (GANs)": "Generator vs Discriminator • Synthetic Data • Image Gen"
+  "Random Forest": ["Ensemble Method", "Decision Trees", "High Accuracy", "Feature Importance"],
+  "Gradient Boosting (XGBoost/LGBM)": ["Sequential Trees", "Error Minimization", "High Performance on Tabular Data"],
+  "K-Means Clustering": ["Distance-based Grouping", "Centroids Optimization", "Unlabeled Data Structuring"],
+  "Principal Component Analysis (PCA)": ["Dimensionality Reduction", "Variance Maximization", "Noise Filtering"],
+  "Isolation Forest": ["Anomaly Detection", "Outlier Isolation", "Unsupervised Tree Structures"],
+  "Proximal Policy Optimization (PPO)": ["Deep Reinforcement Learning", "Stable Updates", "Continuous Control"],
+  "Deep Q-Networks (DQN)": ["Q-Learning Algorithm", "Value Approximation", "Discrete Action Spaces"],
+  "Support Vector Machines (SVM)": ["Margin Maximization", "Hyperplane Separation", "Robust Classification"],
+  "Logistic Regression": ["Probability Estimation", "Binary Outcomes", "High Interpretability"],
+  "Autoencoders": ["Neural Networks", "Reconstruction Loss", "Latent Space Compression"],
+  "Transformers": ["Self-Attention Mechanism", "Sequential Data Processing", "Deep Learning Architecture"],
+  "LSTM": ["Recurrent Neural Network", "Time Series Context", "Long-term Memory Cells"],
+  "ARIMA": ["Statistical Forecasting", "Autoregressive Logic", "Moving Average Smoothing"],
+  "Generative Adversarial Networks (GANs)": ["Generator vs Discriminator", "Synthetic Data Creation", "Complex Image Generation"]
 };
 
 const getAlgoDescription = (algoName) => {
@@ -43,7 +43,7 @@ const getAlgoDescription = (algoName) => {
       return desc;
     }
   }
-  return "Statistical Model • Computational Inference • Pattern Recognition";
+  return ["Statistical Modeling", "Computational Inference", "Pattern Recognition Search"];
 };
 
 const App = () => {
@@ -437,8 +437,18 @@ const App = () => {
                             
                             {/* Hover Tooltip */}
                             <div className="algo-tooltip group-hover:opacity-100 group-hover:visible">
-                                <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-1">ALGORITHM METRICS</span>
-                                <span className="text-xs text-slate-300 block">{getAlgoDescription(algo)}</span>
+                                <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-2 tracking-widest border-b border-indigo-500/20 pb-1.5 flex items-center justify-between">
+                                  <span>Design Metrics</span>
+                                  <Layers size={10} />
+                                </span>
+                                <div className="flex flex-col gap-2 mt-2">
+                                  {getAlgoDescription(algo).map((descInfo, idx) => (
+                                    <div key={idx} className="flex items-start gap-2">
+                                      <div className="w-[4px] h-[4px] rounded-full bg-indigo-400/80 mt-1.5 flex-shrink-0 shadow-[0_0_8px_rgba(129,140,248,0.8)]" />
+                                      <span className="text-[11px] text-slate-300 font-medium leading-relaxed">{descInfo}</span>
+                                    </div>
+                                  ))}
+                                </div>
                             </div>
 
                             </motion.div>
@@ -460,8 +470,18 @@ const App = () => {
 
                                     {/* Hover Tooltip */}
                                     <div className="algo-tooltip group-hover:opacity-100 group-hover:visible border-amber-500/20">
-                                        <span className="text-[10px] uppercase font-bold text-amber-500 block mb-1">BACKUP APPROACH</span>
-                                        <span className="text-xs text-slate-300 block">{getAlgoDescription(algo)}</span>
+                                        <span className="text-[10px] uppercase font-bold text-amber-500 block mb-2 tracking-widest border-b border-amber-500/20 pb-1.5 flex items-center justify-between">
+                                          <span>Backup Approach</span>
+                                          <LayoutTemplate size={10} />
+                                        </span>
+                                        <div className="flex flex-col gap-2 mt-2">
+                                          {getAlgoDescription(algo).map((descInfo, idx) => (
+                                            <div key={idx} className="flex items-start gap-2">
+                                              <div className="w-[4px] h-[4px] rounded-full bg-amber-400/80 mt-1.5 flex-shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                                              <span className="text-[11px] text-slate-300 font-medium leading-relaxed">{descInfo}</span>
+                                            </div>
+                                          ))}
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
