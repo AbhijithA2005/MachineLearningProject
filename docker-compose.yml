@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: ml_paradigm_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Optional: keeps models accessible if retrained dynamically
+      - ./backend/models:/app/models
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ml_paradigm_frontend
+    ports:
+      - "3000:80" # Map host port 3000 to nginx 80
+    depends_on:
+      - backend
+    restart: unless-stopped

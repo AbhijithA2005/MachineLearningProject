@@ -46,6 +46,8 @@ const getAlgoDescription = (algoName) => {
   return ["Statistical Modeling", "Computational Inference", "Pattern Recognition Search"];
 };
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const App = () => {
   const [problem, setProblem] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +61,7 @@ const App = () => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    axios.get('/api/suggestions')
+    axios.get(`${API_BASE}/suggestions`)
       .then(res => setSuggestions(res.data))
       .catch(() => {});
 
@@ -104,7 +106,7 @@ const App = () => {
     setResult(null);
     setShowDropdown(false);
     try {
-      const response = await axios.post('/api/predict', { description: problem });
+      const response = await axios.post(`${API_BASE}/predict`, { description: problem });
       setResult(response.data);
     } catch (err) {
       setError('Analysis failed. Please verify that the backend service is running on port 8000.');
