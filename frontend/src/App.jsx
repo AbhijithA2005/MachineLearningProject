@@ -77,7 +77,7 @@ const App = () => {
     }
   };
 
-  const downloadReport = () => {
+  const downloadReport = async () => {
     if (!result) return;
     const doc = new jsPDF();
 
@@ -173,7 +173,39 @@ const App = () => {
        doc.text("Consider algorithms like: " + result.alternative_approach.algorithms.join(", "), 20, currY);
     }
 
-    doc.save(`Paradigm_Blueprint_${result.ml_type}.pdf`);
+    const filename = `Paradigm_Blueprint_${result.ml_type}.pdf`;
+    const pdfBlob = doc.output('blob');
+
+    try {
+      // 1. Try modern File System Access API (forces the native OS save dialog)
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'PDF Document',
+            accept: { 'application/pdf': ['.pdf'] }
+          }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(pdfBlob);
+        await writable.close();
+        return;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return; // User cancelled the save dialog
+    }
+
+    // 2. Fallback to anchor link if File System API is missing
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }, 100);
   };
 
   const confidencePercent = result ? (result.confidence * 100).toFixed(0) : 0;
