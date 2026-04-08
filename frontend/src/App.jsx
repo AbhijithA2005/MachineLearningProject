@@ -9,7 +9,11 @@ import {
   AlertCircle,
   BarChart3,
   Lightbulb,
-  Layers
+  Layers,
+  HelpCircle,
+  TrendingUp,
+  LayoutTemplate,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
@@ -93,72 +97,81 @@ const App = () => {
     doc.text(`Generated ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 20, 36);
 
     let y = 58;
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('BUSINESS PROBLEM', 20, y);
-    y += 8;
+    const addSectionTitle = (title) => {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 20, y);
+        y += 7;
+    };
+
+    addSectionTitle('BUSINESS PROBLEM');
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(problem, 170);
+    let lines = doc.splitTextToSize(problem, 170);
     doc.text(lines, 20, y);
-    y += lines.length * 6 + 12;
+    y += lines.length * 6 + 10;
 
-    // Classification box
+    // Classification Box
     doc.setDrawColor(226, 232, 240);
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(20, y, 170, 28, 4, 4, 'FD');
+    doc.roundedRect(20, y, 170, 32, 4, 4, 'FD');
     doc.setFontSize(9);
     doc.setTextColor(100, 116, 139);
     doc.setFont('helvetica', 'bold');
     doc.text('PARADIGM', 30, y + 11);
     doc.text('CONFIDENCE', 30, y + 21);
+    doc.text('COMPLEXITY', 120, y + 11);
+    
     doc.setFontSize(11);
     doc.setTextColor(99, 102, 241);
-    doc.text(result.ml_type.toUpperCase(), 80, y + 11);
+    doc.text(result.ml_type.toUpperCase(), 65, y + 11);
     doc.setTextColor(30, 41, 59);
-    doc.text(`${(result.confidence * 100).toFixed(1)}%`, 80, y + 21);
-    y += 38;
+    doc.text(`${(result.confidence * 100).toFixed(1)}%`, 65, y + 21);
+    doc.text(result.problem_complexity.toUpperCase(), 155, y + 11);
+    y += 42;
 
     // Justification
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('STRATEGIC REASONING', 20, y);
-    y += 7;
+    addSectionTitle('STRATEGIC REASONING');
     doc.setTextColor(51, 65, 85);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    const justLines = doc.splitTextToSize(result.justification, 170);
-    doc.text(justLines, 20, y);
-    y += justLines.length * 5 + 12;
+    lines = doc.splitTextToSize(result.justification, 170);
+    doc.text(lines, 20, y);
+    y += lines.length * 5 + 8;
 
-    // Algorithms
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RECOMMENDED ALGORITHMS', 20, y);
-    y += 7;
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 41, 59);
-    result.algorithms.forEach((a) => {
-      doc.text(`  \u2022  ${a}`, 22, y);
-      y += 6;
-    });
-    y += 6;
+    addSectionTitle('WHY NOT OTHERS?');
+    doc.setTextColor(51, 65, 85);
+    lines = doc.splitTextToSize(result.why_not_other, 170);
+    doc.text(lines, 20, y);
+    y += lines.length * 5 + 10;
 
     // Roadmap table
     doc.autoTable({
       startY: y,
-      head: [['Phase', 'Action Item']],
-      body: result.roadmap.map((s, i) => [`Step ${i + 1}`, s]),
+      head: [['Phase', 'Strategic Action Item', 'Core Tech Stack']],
+      body: result.roadmap.map((s, i) => [`Step ${i + 1}`, s.title + ":\n" + s.action, s.tech_stack]),
       theme: 'grid',
       headStyles: { fillColor: [79, 70, 229], fontSize: 9, fontStyle: 'bold' },
       bodyStyles: { fontSize: 9 },
       margin: { left: 20, right: 20 },
       styles: { cellPadding: 5 }
     });
+
+    if (result.alternative_approach) {
+       let currY = doc.lastAutoTable.finalY + 15;
+       if (currY > 270) { doc.addPage(); currY = 20; }
+       doc.setTextColor(100, 116, 139);
+       doc.setFontSize(9);
+       doc.setFont('helvetica', 'bold');
+       doc.text("ALTERNATIVE APPROACH: " + result.alternative_approach.type, 20, currY);
+       currY += 7;
+       doc.setTextColor(30, 41, 59);
+       doc.setFontSize(10);
+       doc.setFont('helvetica', 'normal');
+       doc.text("Consider algorithms like: " + result.alternative_approach.algorithms.join(", "), 20, currY);
+    }
 
     doc.save(`Paradigm_Blueprint_${result.ml_type}.pdf`);
   };
@@ -182,7 +195,7 @@ const App = () => {
           </div>
           <div>
             <h1 className="header-title">Paradigm AI</h1>
-            <p className="header-sub">ML Decision Support System</p>
+            <p className="header-sub">Intelligent ML Consultant</p>
           </div>
         </motion.header>
 
@@ -259,9 +272,20 @@ const App = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
+              {/* Notifications */}
+              {result.input_enhancement_suggestions && (
+                <div className="enhancement-chip mt-4 mb-6">
+                    <Info size={16} className="text-blue-400" />
+                    <span>{result.input_enhancement_suggestions}</span>
+                </div>
+              )}
+
               {/* Meta Strip */}
               <div className="meta-strip">
-                <div className="meta-left">
+                <div className="meta-left relative">
+                  <div className="complexity-badge absolute top-4 left-4 flex gap-1 items-center">
+                      <TrendingUp size={12}/> {result.problem_complexity.toUpperCase()}
+                  </div>
                   <span className={`badge badge-${result.ml_type.toLowerCase()}`}>
                     {result.ml_type}
                   </span>
@@ -270,13 +294,22 @@ const App = () => {
                     <span className="confidence-unit">%</span>
                   </div>
                   <span className="confidence-label">Confidence Score</span>
+                  <p className="confidence-desc mt-2 text-xs text-center text-slate-400 max-w-[200px] leading-snug">
+                    {result.confidence_explanation}
+                  </p>
                 </div>
                 <div className="meta-right">
                   <div className="justification-title">
                     <Lightbulb size={16} />
-                    Strategic Reasoning
+                    Context-Aware Reasoning
                   </div>
-                  <p className="justification-text">{result.justification}</p>
+                  <p className="justification-text mb-6">"{result.justification}"</p>
+                  
+                  <div className="justification-title text-rose-400">
+                    <HelpCircle size={16} />
+                    Why Not Other ML Types?
+                  </div>
+                  <p className="justification-text text-sm text-slate-400">{result.why_not_other}</p>
                 </div>
               </div>
 
@@ -284,39 +317,58 @@ const App = () => {
               <div className="blueprint">
                 <div className="blueprint-header">
                   <div>
-                    <div className="blueprint-title">Implementation Roadmap</div>
-                    <div className="blueprint-sub">Phase-based execution plan tailored to your problem</div>
+                    <div className="blueprint-title">Hyper-Personalized Roadmap</div>
+                    <div className="blueprint-sub">Actionable execution plan leveraging specified data and outcomes</div>
                   </div>
                   <button className="btn-outline" onClick={downloadReport}>
                     <Download size={16} />
-                    Export PDF
+                    Export Detailed PDF
                   </button>
                 </div>
 
                 <div className="blueprint-body">
-                  {/* Algorithms */}
-                  <div className="algo-sidebar">
-                    <div className="algo-label">
-                      <Layers size={12} />
-                      Recommended Algorithms
+                  {/* Algorithms & Alternatives */}
+                  <div className="algo-sidebar flex flex-col gap-8">
+                    <div>
+                        <div className="algo-label">
+                        <Layers size={12} />
+                        Primary Algorithms
+                        </div>
+                        <div className="algo-list">
+                        {result.algorithms.map((algo, i) => (
+                            <motion.div
+                            key={i}
+                            className="algo-item"
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 + i * 0.07 }}
+                            >
+                            <span className="algo-number">{i + 1}</span>
+                            {algo}
+                            </motion.div>
+                        ))}
+                        </div>
                     </div>
-                    <div className="algo-list">
-                      {result.algorithms.map((algo, i) => (
-                        <motion.div
-                          key={i}
-                          className="algo-item"
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 + i * 0.07 }}
-                        >
-                          <span className="algo-number">{i + 1}</span>
-                          {algo}
-                        </motion.div>
-                      ))}
-                    </div>
+
+                    {result.alternative_approach && (
+                        <div>
+                            <div className="algo-label text-amber-500">
+                            <LayoutTemplate size={12} />
+                            Alternative: {result.alternative_approach.type}
+                            </div>
+                            <div className="algo-list opacity-80">
+                            {result.alternative_approach.algorithms.map((algo, i) => (
+                                <motion.div key={i} className="algo-item p-2">
+                                    <span className="text-xs text-amber-200/60 font-mono">ALT</span>
+                                    {algo}
+                                </motion.div>
+                            ))}
+                            </div>
+                        </div>
+                    )}
                   </div>
 
-                  {/* Roadmap */}
+                  {/* Enhanced Roadmap */}
                   <div className="roadmap-panel">
                     <div className="roadmap-label">Execution Sequence</div>
                     <div className="roadmap-timeline">
@@ -329,11 +381,17 @@ const App = () => {
                           transition={{ delay: 0.2 + i * 0.1 }}
                         >
                           <div className="step-indicator">
-                            <div className="step-dot">{i + 1}</div>
+                            <div className="step-dot font-mono text-sm">{i + 1}</div>
                             {i < result.roadmap.length - 1 && <div className="step-line" />}
                           </div>
-                          <div className="step-body">
-                            <p>{step}</p>
+                          <div className="step-body flex flex-col gap-2">
+                            <h4 className="font-semibold text-white/90">{step.title}</h4>
+                            <p className="text-sm">{step.action}</p>
+                            <div className="mt-1 flex items-center">
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded">
+                                    {step.tech_stack}
+                                </span>
+                            </div>
                           </div>
                         </motion.div>
                       ))}
@@ -341,6 +399,15 @@ const App = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* Similar Use Cases */}
+              <div className="flex flex-wrap gap-4 items-center justify-center pt-4 opacity-50 mt-8 hover:opacity-100 transition-opacity duration-300">
+                  <span className="text-xs font-bold uppercase tracking-widest">Similar Industry Use Cases:</span>
+                  {result.similar_use_cases.map((uc, i) => (
+                      <span key={i} className="text-sm px-3 py-1 bg-white/5 border border-white/10 rounded-full">{uc}</span>
+                  ))}
+              </div>
+
             </motion.div>
           )}
         </AnimatePresence>
