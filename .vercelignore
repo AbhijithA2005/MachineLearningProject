@@ -1,0 +1,7 @@
+backend/
+*.csv
+docker-compose.yml
+run_system.py
+render.yaml
+.git/
+node_modules/

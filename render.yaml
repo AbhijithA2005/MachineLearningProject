@@ -1,10 +1,21 @@
 services:
   - type: web
     name: paradigm-ai-backend
-    env: python
+    env: docker
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.12
+    healthCheckPath: /health
+
+
+# Note: Frontend is deployed on Vercel for better performance.
+# If you ever want to use Render for frontend too, you can use the config below:
+#  - type: static
+#    name: paradigm-ai-frontend
+#    rootDir: frontend
+#    buildCommand: npm install && npm run build
+#    publishPath: dist
+#    envVars:
+#      - key: VITE_API_BASE_URL
+#        fromService:
+#          type: web
+#          name: paradigm-ai-backend
+#          envVarKey: RENDER_EXTERNAL_URL
