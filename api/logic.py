@@ -1,23 +1,5 @@
-import joblib
 import os
-from sentence_transformers import SentenceTransformer
 import numpy as np
-
-# Load models
-base_dir = os.path.dirname(os.path.abspath(__file__))
-classifier_path = os.path.join(base_dir, 'models', 'classifier.joblib')
-
-classifier = None
-if os.path.exists(classifier_path):
-    try:
-        classifier = joblib.load(classifier_path)
-    except Exception as e:
-        print(f"Error loading classifier: {e}")
-
-# Vercel Cache Handling: Model will be downloaded to /tmp if not found
-# all-MiniLM-L6-v2 is ~80MB, which fits well within Vercel's limits
-os.environ['SENTENCE_TRANSFORMERS_HOME'] = '/tmp/torch_cache'
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def extract_entities(text):
     import re
@@ -39,44 +21,42 @@ def extract_entities(text):
 
 def get_ml_info(problem_description):
     text = problem_description.lower()
-    rules_paradigm = None
-    keywords_found = []
     
-    supervised_keywords = ["predict", "forecast", "classification", "regression", "detect", "labels", "estimate"]
-    unsupervised_keywords = ["cluster", "group", "segment", "hidden", "patterns", "structure", "unlabeled"]
-    reinforcement_keywords = ["agent", "reward", "optimize", "policy", "feedback", "trial", "control", "engine", "navigate", "autonomous"]
+    # Lightweight weighted keyword classification
+    # This replaces the heavy SentenceTransformers to fit on Vercel
+    scores = {
+        "Supervised": 0,
+        "Unsupervised": 0,
+        "Reinforcement": 0
+    }
     
-    for k in supervised_keywords:
-        if k in text:
-            keywords_found.append(k)
-            rules_paradigm = "Supervised"
-    for k in unsupervised_keywords:
-        if k in text:
-            keywords_found.append(k)
-            rules_paradigm = "Unsupervised"
-    for k in reinforcement_keywords:
-        if k in text:
-            keywords_found.append(k)
-            rules_paradigm = "Reinforcement"
+    weights = {
+        "Supervised": ["predict", "forecast", "classification", "regression", "detect", "labels", "estimate", "historical labels", "ground truth", "target variable"],
+        "Unsupervised": ["cluster", "group", "segment", "hidden", "patterns", "structure", "unlabeled", "no labels", "discovery", "similarity"],
+        "Reinforcement": ["agent", "reward", "optimize", "policy", "feedback", "trial", "control", "engine", "navigate", "autonomous", "environment", "action", "state"]
+    }
+    
+    # Calculate scores based on keyword occurrences
+    for paradigm, keywords in weights.items():
+        for k in keywords:
+            if k in text:
+                scores[paradigm] += 1
+                # Give extra weight to strong indicators
+                if k in ["predict", "cluster", "reward", "agent"]:
+                    scores[paradigm] += 1
 
-    try:
-        embedding = embedding_model.encode([problem_description])[0]
-        probs = classifier.predict_proba([embedding])[0]
-        classes = classifier.classes_
-        prediction_idx = np.argmax(probs)
-        ml_type_model = classes[prediction_idx]
-        confidence = float(np.max(probs))
-    except Exception:
-        ml_type_model = rules_paradigm if rules_paradigm else "Supervised"
-        confidence = 0.65
+    # Determine final type
+    max_score = max(scores.values())
+    if max_score == 0:
+        final_type = "Supervised" # Default fallback
+        confidence = 0.45
+    else:
+        # Get the paradigm with the highest score
+        final_type = max(scores, key=scores.get)
+        # Calculate a pseudo-confidence score
+        total_score = sum(scores.values())
+        confidence = min(0.95, 0.6 + (max_score / (total_score + 1)) * 0.3)
 
-    final_type = ml_type_model
-    if rules_paradigm and confidence < 0.6:
-        final_type = rules_paradigm
-    
-    if rules_paradigm == ml_type_model:
-        confidence = min(1.0, confidence + 0.15)
-        
     # Analyze complexity
     word_count = len(text.split())
     if word_count < 8:
@@ -101,16 +81,16 @@ def get_ml_info(problem_description):
     }
     
     # Confidence Explanation
-    if confidence > 0.85:
-        conf_exp = f"Confidence is high ({int(confidence*100)}%) because the problem description clearly matches established {final_type} patterns and contains specific operational keywords."
+    if confidence > 0.8:
+        conf_exp = f"Confidence is high ({int(confidence*100)}%) because the problem description clearly matches established {final_type} patterns."
     elif confidence > 0.6:
-        conf_exp = f"Confidence is moderate ({int(confidence*100)}%). While the task aligns with {final_type}, it lacks explicit data source definitions or target specifications."
+        conf_exp = f"Confidence is moderate ({int(confidence*100)}%). While the task aligns with {final_type}, it lacks some explicit environment or target definitions."
     else:
-        conf_exp = f"Confidence is low ({int(confidence*100)}%). The input is ambiguous. It has been mapped to {final_type} as a best effort, but more detail is required."
+        conf_exp = f"Confidence is low ({int(confidence*100)}%). The input is ambiguous. It has been mapped to {final_type} based on keyword frequency."
 
-    input_enhancements = "To improve model selection, consider specifying the exact format of your data (e.g., CSV, images, text) and whether historical labels currently exist."
+    input_enhancements = "To improve results, try specifying whether your data has historical labels or if the model needs to learn from an environment."
     if complexity == "Low":
-        input_enhancements = "Your input is very brief. Please specify the target variable you wish to predict or optimize, and the exact data you have available."
+        input_enhancements = "Your input is very brief. Please specify the target variable and the source of your data."
 
     use_cases = {
         "Supervised": ["Customer Churn Prediction", "Sales Demand Forecasting", "Financial Fraud Detection"],
@@ -140,42 +120,39 @@ def get_ml_info(problem_description):
 
 def generate_deep_justification(ml_type, target, data, text):
     if ml_type == "Supervised":
-        return f"The problem involves mapping input features from {data} to forecast or classify '{target}'. Since this requires historical labeled data to train the model to output a known target, it aligns perfectly with Supervised Learning."
+        return f"The problem involves mapping input features from {data} to forecast or classify '{target}'. Since this requires historical labeled data to train the model, it aligns with Supervised Learning."
     elif ml_type == "Unsupervised":
-        return f"The core task is to analyze {data} to automatically discover hidden structures or segment '{target}'. Because there are no pre-defined labeled outputs guiding the model, this is an Unsupervised Learning task."
+        return f"The core task is to analyze {data} to automatically discover hidden structures or segment '{target}'. Since no labels are provided, this is an Unsupervised Learning task."
     else:
-        return f"This involves training an autonomous agent to optimize '{target}' within an interactive environment. Since the system must learn optimal actions through trial-and-error using reward signals rather than static data, it is a Reinforcement Learning problem."
+        return f"This involves training an agent to optimize '{target}' within an environment. Since the system must learn optimal actions through trial-and-error using reward signals, it is a Reinforcement Learning problem."
 
 def generate_why_not(ml_type, target):
     if ml_type == "Supervised":
-        return f"Unsupervised learning is not suitable because the task requires predicting a specific target ('{target}') rather than simply grouping unlabeled data. Reinforcement learning is overkill as it doesn't require continuous environmental interaction."
+        return f"Unsupervised learning is not suitable because the task requires predicting a specific target ('{target}') rather than simply grouping unlabeled data."
     elif ml_type == "Unsupervised":
-        return "Supervised learning cannot be used because there are no clear, historical ground-truth labels to train against. We must let the algorithm find the patterns inherently."
+        return "Supervised learning cannot be used because there are no clear, historical ground-truth labels to train against."
     else:
-        return "Supervised learning isn't feasible here as we do not have a static dataset of 'correct' actions. The system must discover the optimal strategy dynamically through environmental interaction."
+        return "Supervised learning isn't feasible here as we do not have a static dataset of 'correct' actions; the system must discover strategy dynamically."
 
 def generate_advanced_roadmap(ml_type, target, data):
     if ml_type == "Supervised":
         return [
             {"title": "Data Aggregation", "action": f"Extract and consolidate {data} into a structured format.", "tech_stack": "Pandas, SQL"},
-            {"title": "Feature Engineering", "action": f"Clean missing values and engineer features highly correlated with '{target}'.", "tech_stack": "Scikit-Learn, NumPy"},
+            {"title": "Feature Engineering", "action": f"Clean missing values and engineer features for '{target}'.", "tech_stack": "Scikit-Learn, NumPy"},
             {"title": "Model Training", "action": f"Split the dataset and train a baseline classification/regression model.", "tech_stack": "XGBoost, LightGBM"},
-            {"title": "Hyperparameter Tuning", "action": "Optimize the model's parameters using cross-validation to minimize error.", "tech_stack": "Optuna, GridSearch"},
-            {"title": "API Deployment", "action": f"Deploy the model to a REST endpoint to serve real-time '{target}' predictions.", "tech_stack": "FastAPI, Vercel"}
+            {"title": "API Integration", "action": f"Deploy the model to a serverless endpoint.", "tech_stack": "FastAPI, Vercel"}
         ]
     elif ml_type == "Unsupervised":
         return [
             {"title": "Data Ingestion", "action": f"Pull raw datasets representing {data} into the analytical environment.", "tech_stack": "Pandas, PySpark"},
-            {"title": "Dimensionality Reduction", "action": "Scale the data and apply PCA to reduce noise and enhance pattern visibility.", "tech_stack": "Scikit-Learn"},
+            {"title": "Dimensionality Reduction", "action": "Calculate variance and apply PCA to reduce noise.", "tech_stack": "Scikit-Learn"},
             {"title": "Clustering Execution", "action": f"Apply clustering algorithms to naturally group '{target}'.", "tech_stack": "K-Means, DBSCAN"},
-            {"title": "Cluster Profiling", "action": "Analyze the distinct characteristics of each generated cluster for business relevance.", "tech_stack": "Matplotlib, Seaborn"},
-            {"title": "Operational Integration", "action": "Export the cluster mappings back to the CRM or data warehouse.", "tech_stack": "Airflow, Snowflake"}
+            {"title": "Operational Integration", "action": "Export the cluster mappings to the data warehouse.", "tech_stack": "Vercel, SQL"}
         ]
     else:
         return [
-            {"title": "Environment Design", "action": "Define the state space, action space, and transition dynamics of the system.", "tech_stack": "OpenAI Gym, Ray RLlib"},
+            {"title": "Environment Design", "action": "Define the state space and transition dynamics of the system.", "tech_stack": "Python"},
             {"title": "Reward Formulation", "action": f"Design a reward function that mathematically incentivizes '{target}'.", "tech_stack": "Python"},
-            {"title": "Agent Initialization", "action": "Initialize a deep neural network to act as the policy agent.", "tech_stack": "PyTorch, TensorFlow"},
-            {"title": "Simulation Training", "action": "Run thousands of simulated episodes allowing the agent to learn via exploration.", "tech_stack": "CUDA, AWS EC2"},
-            {"title": "Production Handoff", "action": "Deploy the converged policy with strict safety constraints to prevent erratic real-world actions.", "tech_stack": "Vercel"}
+            {"title": "Agent Initialization", "action": "Initialize a neural network to act as the policy agent.", "tech_stack": "Keras, NumPy"},
+            {"title": "Production Handoff", "action": "Deploy the converged policy with strict safety constraints.", "tech_stack": "Vercel"}
         ]
