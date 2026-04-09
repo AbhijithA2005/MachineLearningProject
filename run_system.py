@@ -13,8 +13,8 @@ def run():
     # 1. Start Backend
     print("Launching Backend (FastAPI)...")
     backend_proc = subprocess.Popen(
-        [python_path, "main.py"],
-        cwd="backend"
+        [python_path, "index.py"],
+        cwd="api"
     )
     
     # 2. Start Frontend

@@ -14,6 +14,9 @@ if os.path.exists(classifier_path):
     except Exception as e:
         print(f"Error loading classifier: {e}")
 
+# Vercel Cache Handling: Model will be downloaded to /tmp if not found
+# all-MiniLM-L6-v2 is ~80MB, which fits well within Vercel's limits
+os.environ['SENTENCE_TRANSFORMERS_HOME'] = '/tmp/torch_cache'
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def extract_entities(text):
@@ -158,7 +161,7 @@ def generate_advanced_roadmap(ml_type, target, data):
             {"title": "Feature Engineering", "action": f"Clean missing values and engineer features highly correlated with '{target}'.", "tech_stack": "Scikit-Learn, NumPy"},
             {"title": "Model Training", "action": f"Split the dataset and train a baseline classification/regression model.", "tech_stack": "XGBoost, LightGBM"},
             {"title": "Hyperparameter Tuning", "action": "Optimize the model's parameters using cross-validation to minimize error.", "tech_stack": "Optuna, GridSearch"},
-            {"title": "API Deployment", "action": f"Deploy the model to a REST endpoint to serve real-time '{target}' predictions.", "tech_stack": "FastAPI, Docker"}
+            {"title": "API Deployment", "action": f"Deploy the model to a REST endpoint to serve real-time '{target}' predictions.", "tech_stack": "FastAPI, Vercel"}
         ]
     elif ml_type == "Unsupervised":
         return [
@@ -174,5 +177,5 @@ def generate_advanced_roadmap(ml_type, target, data):
             {"title": "Reward Formulation", "action": f"Design a reward function that mathematically incentivizes '{target}'.", "tech_stack": "Python"},
             {"title": "Agent Initialization", "action": "Initialize a deep neural network to act as the policy agent.", "tech_stack": "PyTorch, TensorFlow"},
             {"title": "Simulation Training", "action": "Run thousands of simulated episodes allowing the agent to learn via exploration.", "tech_stack": "CUDA, AWS EC2"},
-            {"title": "Production Handoff", "action": "Deploy the converged policy with strict safety constraints to prevent erratic real-world actions.", "tech_stack": "TorchServe"}
+            {"title": "Production Handoff", "action": "Deploy the converged policy with strict safety constraints to prevent erratic real-world actions.", "tech_stack": "Vercel"}
         ]

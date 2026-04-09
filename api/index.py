@@ -1,11 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from logic import get_ml_info
+import os
+
+# Use relative import for logic if running in api/ folder
+try:
+    from .logic import get_ml_info
+except ImportError:
+    from logic import get_ml_info
 
 app = FastAPI()
 
-# Enable CORS
+# Enable CORS for frontend flexibility
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,19 +23,17 @@ app.add_middleware(
 class ProblemRequest(BaseModel):
     description: str
 
-@app.post("/predict")
+@app.post("/api/predict")
 async def predict_paradigm(request: ProblemRequest):
     if not request.description:
         raise HTTPException(status_code=400, detail="Description is required")
-    
-    if get_ml_info.__code__.co_argcount == 1:
+    try:
         result = get_ml_info(request.description)
-    else:
-        # Fallback if I change signature
-        result = get_ml_info(request.description)
-    return result
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/suggestions")
+@app.get("/api/suggestions")
 async def get_suggestions():
     return [
         "Predict customer churn based on transaction history",
@@ -40,10 +44,8 @@ async def get_suggestions():
         "Optimize energy consumption in a smart grid system"
     ]
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "runtime": "vercel"}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# Vercel needs the 'app' object to be available at the module level

@@ -109,7 +109,7 @@ const App = () => {
       const response = await axios.post(`${API_BASE}/predict`, { description: problem });
       setResult(response.data);
     } catch (err) {
-      setError('Analysis failed. Please verify that the backend service is running on port 8000.');
+      setError('Analysis failed. The intelligence engine is currently unreachable. Please try again in a moment.');
       console.error(err);
     } finally {
       setLoading(false);
