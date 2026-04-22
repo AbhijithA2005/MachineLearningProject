@@ -21,3 +21,4 @@ backend/models/*.joblib
 
 # Logs
 *.log
+venv/
