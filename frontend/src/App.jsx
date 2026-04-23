@@ -34,7 +34,20 @@ const algoDescriptions = {
   "Transformers": ["Self-Attention Mechanism", "Sequential Data Processing", "Deep Learning Architecture"],
   "LSTM": ["Recurrent Neural Network", "Time Series Context", "Long-term Memory Cells"],
   "ARIMA": ["Statistical Forecasting", "Autoregressive Logic", "Moving Average Smoothing"],
-  "Generative Adversarial Networks (GANs)": ["Generator vs Discriminator", "Synthetic Data Creation", "Complex Image Generation"]
+  "Generative Adversarial Networks (GANs)": ["Generator vs Discriminator", "Synthetic Data Creation", "Complex Image Generation"],
+  
+  "Pseudo-Labelling": ["Self-Training Approach", "Confidence Thresholding", "Iterative Label Assignment"],
+  "Label Spreading": ["Graph-Based Inference", "Semi-Supervised Technique", "Manifold Smoothness"],
+  "Label Propagation": ["Graph-Based Inference", "Semi-Supervised Technique", "Manifold Smoothness"],
+  "Generative Models": ["Latent Feature Extraction", "Probabilistic Framework", "Reconstruction Prior"],
+  "Active Learning": ["Human-in-the-Loop", "Query Strategies", "Uncertainty Minimization"],
+  "Uncertainty Sampling": ["Decision Boundary Ambiguity", "Informativeness Metric", "Active Learning Query"],
+  "Query by Committee": ["Ensemble Disagreement", "Active Learning Query", "Version Space Search"],
+  
+  "BERT / GPT architectures": ["Transformer Pre-training", "Masked Language Modeling", "Next Token Prediction"],
+  "SimCLR / MoCo": ["Contrastive Instance Discrimination", "Data Augmentation Views", "Representation Learning"],
+  "Masked Autoencoders (MAE)": ["Patch Masking", "Vision Transformers", "Self-Supervised Reconstruction"],
+  "Contrastive Learning": ["Positive/Negative Pairs", "Embedding Space Separation", "Self-Supervised Objective"]
 };
 
 const getAlgoDescription = (algoName) => {
@@ -256,8 +269,8 @@ const App = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="header-icon">
-            <BrainCircuit size={28} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', flexShrink: 0 }}>
+            <img src="/logo.png" alt="Paradigm AI Logo" className="shiny-logo" />
           </div>
           <div>
             <h1 className="header-title">Paradigm AI</h1>

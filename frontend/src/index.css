@@ -21,6 +21,8 @@
   --supervised-color: #38bdf8;
   --unsupervised-color: #c084fc;
   --reinforcement-color: #4ade80;
+  --semi-supervised-color: #fbbf24;
+  --self-supervised-color: #f43f5e;
   --font: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
 }
 
@@ -145,6 +147,20 @@ body {
   justify-content: center;
   color: var(--primary-light);
   flex-shrink: 0;
+}
+
+@keyframes shiny-pulse {
+  0% { filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.3)) brightness(1); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.7)) brightness(1.25); transform: scale(1.08); }
+  100% { filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.3)) brightness(1); transform: scale(1); }
+}
+
+.shiny-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  animation: shiny-pulse 4s ease-in-out infinite;
+  transform-origin: center;
 }
 
 .header-title {
@@ -436,6 +452,18 @@ body {
   background: rgba(74, 222, 128, 0.12);
   color: var(--reinforcement-color);
   border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.badge-semi-supervised {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--semi-supervised-color);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.badge-self-supervised {
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--self-supervised-color);
+  border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
 .confidence-value {

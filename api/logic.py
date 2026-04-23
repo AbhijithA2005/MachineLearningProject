@@ -29,7 +29,6 @@ _tfidf_pipeline = Pipeline([
         C=4.0,
         max_iter=1000,
         solver="lbfgs",
-        multi_class="multinomial",
     )),
 ])
 _tfidf_pipeline.fit(_texts, _labels)
@@ -71,7 +70,7 @@ def get_ml_info(problem_description):
     tfidf_conf = float(np.max(proba))
 
     # ── Step 2: Rule-based keyword engine (fallback / hybrid tie-breaker) ──
-    keyword_scores = {"Supervised": 0, "Unsupervised": 0, "Reinforcement": 0}
+    keyword_scores = {"Supervised": 0, "Unsupervised": 0, "Reinforcement": 0, "Semi-supervised": 0, "Self-supervised": 0}
     keyword_weights = {
         "Supervised":    ["predict", "forecast", "classification", "regression",
                           "detect", "labels", "estimate", "historical labels",
@@ -82,6 +81,12 @@ def get_ml_info(problem_description):
         "Reinforcement": ["agent", "reward", "optimize", "policy", "feedback",
                           "trial", "control", "engine", "navigate", "autonomous",
                           "environment", "action", "state"],
+        "Semi-supervised": ["semi-supervised", "partially labelled", "pseudo-label",
+                            "small labelled", "large unlabelled", "few annotated",
+                            "unannotated", "sparse ground-truth"],
+        "Self-supervised": ["self-supervised", "pre-train", "mask", "reconstruct",
+                            "predict the next word", "auto-regressive", "contrastive",
+                            "foundation model"],
     }
     for paradigm, keywords in keyword_weights.items():
         for k in keywords:
@@ -127,10 +132,14 @@ def get_ml_info(problem_description):
     alts = {
         "Supervised":    {"type": "Time Series / Deep Learning",
                           "algorithms": ["ARIMA", "LSTM", "Transformers"]},
-        "Unsupervised":  {"type": "Self-Supervised Learning",
-                          "algorithms": ["Autoencoders", "Generative Adversarial Networks (GANs)"]},
+        "Unsupervised":  {"type": "Dimensionality Reduction / Density Estimation",
+                          "algorithms": ["PCA", "t-SNE", "Gaussian Mixture Models"]},
         "Reinforcement": {"type": "Heuristic Optimization",
                           "algorithms": ["Genetic Algorithms", "Simulated Annealing"]},
+        "Semi-supervised": {"type": "Active Learning",
+                            "algorithms": ["Uncertainty Sampling", "Query by Committee"]},
+        "Self-supervised": {"type": "Foundation Models",
+                            "algorithms": ["Transformers", "Masked Autoencoders", "Contrastive Learning"]},
     }
 
     if confidence > 0.80:
@@ -158,6 +167,10 @@ def get_ml_info(problem_description):
                           "Topic Modeling in Documents"],
         "Reinforcement": ["Dynamic Pricing Optimization", "Autonomous Robot Navigation",
                           "Supply Chain Logistics Routing"],
+        "Semi-supervised": ["Web Page Classification", "Medical Image Analysis",
+                            "Speech Recognition Enhancement"],
+        "Self-supervised": ["Large Language Models", "Vision Foundation Models",
+                            "General Purpose Embeddings"],
     }
 
     algorithms = {
@@ -167,6 +180,10 @@ def get_ml_info(problem_description):
                           "Isolation Forest"],
         "Reinforcement": ["Proximal Policy Optimization (PPO)", "Deep Q-Network (DQN)",
                           "Soft Actor-Critic (SAC)"],
+        "Semi-supervised": ["Pseudo-Labelling", "Label Spreading / Label Propagation",
+                            "Generative Models (e.g. Semi-supervised VAE)"],
+        "Self-supervised": ["BERT / GPT architectures", "SimCLR / MoCo",
+                            "Masked Autoencoders (MAE)"],
     }
 
     return {
@@ -196,11 +213,20 @@ def generate_deep_justification(ml_type, target, data, text):
                 f"or segment '{target}'. Since no labels are provided, this is an Unsupervised "
                 f"Learning task — validated by TF-IDF embedding similarity to unlabelled "
                 f"problem descriptions in the training corpus.")
-    else:
+    elif ml_type == "Reinforcement":
         return (f"This involves training an agent to optimize '{target}' within an environment. "
                 f"The system must learn optimal actions through trial-and-error using reward "
                 f"signals — a pattern confirmed by TF-IDF matching against Reinforcement "
                 f"Learning problem templates.")
+    elif ml_type == "Self-supervised":
+        return (f"The task involves learning representations from massive {data} by generating "
+                f"labels directly from the data itself (e.g. masking and reconstructing '{target}'). "
+                f"This matches the Self-Supervised Learning paradigm for building foundation models.")
+    else:
+        return (f"The task involves classifying or predicting '{target}' using {data}, but "
+                f"leverages a massive amount of unlabelled data alongside a small set of "
+                f"labelled examples due to high labelling costs. This aligns with Semi-supervised "
+                f"Learning, validated by our classifier.")
 
 
 def generate_why_not(ml_type, target):
@@ -213,11 +239,20 @@ def generate_why_not(ml_type, target):
         return ("Supervised learning cannot be applied because there are no historical ground-truth "
                 "labels to train against. Reinforcement Learning is not appropriate as the goal "
                 "is structure discovery, not policy optimization through environmental interaction.")
-    else:
+    elif ml_type == "Reinforcement":
         return ("Supervised learning is infeasible here — there is no static dataset of 'correct' "
                 "actions; the agent must discover strategy dynamically. Unsupervised learning "
                 "cannot handle the sequential decision-making and reward-signal structure "
                 "of this problem.")
+    elif ml_type == "Self-supervised":
+        return ("Supervised learning is not applicable since manual labelling of such massive data "
+                "is impossible. Unsupervised learning is insufficient because the goal is to learn "
+                "rich feature representations by predicting hidden targets, not just clustering.")
+    else:
+        return ("Pure supervised learning is not scalable here because acquiring enough "
+                "high-quality labels would be prohibitively expensive or time-consuming. "
+                "Pure unsupervised learning would waste the valuable signal present in the "
+                "small amount of existing labelled data.")
 
 
 # ── 5-Step Roadmap generators ─────────────────────────────────────────────────
@@ -278,7 +313,7 @@ def generate_advanced_roadmap(ml_type, target, data):
                 "tech_stack": "SQL, Tableau, BigQuery, Airflow",
             },
         ]
-    else:  # Reinforcement
+    elif ml_type == "Reinforcement":
         return [
             {
                 "title":      "Environment Design",
@@ -304,5 +339,61 @@ def generate_advanced_roadmap(ml_type, target, data):
                 "title":      "Production Handoff",
                 "action":     "Serialize the final policy, wire to the live environment API, and instrument with real-time performance dashboards.",
                 "tech_stack": "FastAPI, ONNX, Prometheus, Vercel",
+            },
+        ]
+    elif ml_type == "Self-supervised":
+        return [
+            {
+                "title":      "Data Curation at Scale",
+                "action":     f"Ingest and preprocess massive unlabelled {data}. Clean artifacts and ensure diversity for foundation model training.",
+                "tech_stack": "Apache Spark, Ray, HuggingFace Datasets",
+            },
+            {
+                "title":      "Pretext Task Design",
+                "action":     f"Define the self-supervised objective for '{target}' (e.g. masked language modeling, contrastive instance discrimination).",
+                "tech_stack": "PyTorch, TensorFlow",
+            },
+            {
+                "title":      "Distributed Pre-training",
+                "action":     "Train the large neural network using the pretext task across multiple GPUs. Monitor representation collapse and loss scaling.",
+                "tech_stack": "PyTorch Lightning, DeepSpeed, Megatron-LM",
+            },
+            {
+                "title":      "Representation Evaluation",
+                "action":     "Evaluate the learned embeddings using linear probing or zero-shot transfer on established downstream benchmarks.",
+                "tech_stack": "Scikit-Learn, Weights & Biases",
+            },
+            {
+                "title":      "Fine-Tuning & Deployment",
+                "action":     "Fine-tune the pre-trained model on specific downstream tasks and deploy the foundation model via a scalable inference endpoint.",
+                "tech_stack": "HuggingFace Transformers, TensorRT, vLLM",
+            },
+        ]
+    else:
+        return [
+            {
+                "title":      "Data Segmentation",
+                "action":     f"Partition {data} into a small labelled set and a massive unlabelled set. Ensure the labelled set is representative of the whole.",
+                "tech_stack": "Pandas, Scikit-Learn",
+            },
+            {
+                "title":      "Baseline Supervised Model",
+                "action":     f"Train a baseline model using only the limited labelled data targeting '{target}'. Establish a lower bound for performance.",
+                "tech_stack": "Scikit-Learn, LightGBM",
+            },
+            {
+                "title":      "Pseudo-Labelling / Self-Training",
+                "action":     "Use the baseline model to predict labels for the unlabelled data. Filter high-confidence predictions and add them to the training pool.",
+                "tech_stack": "Python, NumPy",
+            },
+            {
+                "title":      "Iterative Retraining",
+                "action":     "Retrain the model on the combined dataset (true labels + pseudo-labels). Repeat the process until performance plateaus.",
+                "tech_stack": "Scikit-Learn, PyTorch",
+            },
+            {
+                "title":      "Validation & Deployment",
+                "action":     f"Evaluate the final model strictly on a hold-out set with true labels for '{target}'. Deploy to a scalable inference endpoint.",
+                "tech_stack": "FastAPI, MLflow, Docker",
             },
         ]

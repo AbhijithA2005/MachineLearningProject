@@ -49,3 +49,7 @@ async def health():
     return {"status": "healthy", "runtime": "vercel"}
 
 # Vercel needs the 'app' object to be available at the module level
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

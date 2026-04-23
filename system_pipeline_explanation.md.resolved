@@ -1,0 +1,96 @@
+# ML Paradigm Decision Support System: Architecture & Pipeline
+
+This document provides a comprehensive overview of the **ML Paradigm Decision Support System**, detailing its end-to-end pipeline from user input to the final generated roadmap.
+
+## 1. System Pipeline Flowchart
+
+The following flowchart illustrates the complete lifecycle of a single prediction request as it moves through the frontend, backend, and core machine learning intelligence modules.
+
+```mermaid
+graph TD
+    %% Frontend Layer
+    subgraph Frontend [Frontend Interface - React/Vite]
+        A[User Enters Problem Description]
+        A --> B(Submit POST Request)
+        K(Display Results Dashboard)
+    end
+
+    %% Backend API Layer
+    subgraph BackendAPI [Backend API - FastAPI]
+        B -- /api/predict --> C{Validate Input}
+        C -- Invalid --> D[Return 400 Error]
+        C -- Valid --> E[Call get_ml_info]
+        J[Return JSON Response] --> K
+    end
+
+    %% ML Intelligence Layer
+    subgraph ML_Logic [ML Core Logic - Scikit-Learn]
+        E --> F1[Step 1: TF-IDF + Logistic Regression]
+        E --> F2[Step 2: Rule-Based Keyword Engine]
+        E --> F3[Entity Extraction regex]
+        
+        F1 --> G{Step 3: Hybrid Decision Logic}
+        F2 --> G
+        
+        G --> H[Determine ML Paradigm & Confidence]
+        H --> I[Generate Rich Output]
+        F3 --> I
+        I --> J
+    end
+    
+    %% Output Sub-components
+    subgraph Output_Gen [Rich Output Generation]
+        I -.-> Justification[Justification & Why Not]
+        I -.-> Roadmap[5-Step Implementation Roadmap]
+        I -.-> Alts[Alternative Algorithms & Use Cases]
+        I -.-> Complexity[Complexity Analysis]
+    end
+```
+
+---
+
+## 2. Detailed Project Explanation
+
+The **ML Paradigm Decision Support System** is an intelligent web application designed to help users (such as business analysts or junior data scientists) identify the correct Machine Learning paradigm—**Supervised**, **Unsupervised**, or **Reinforcement Learning**—for their specific problem.
+
+The system is split into two primary components: a **Vite/React Frontend** running on port 3000, and a **FastAPI Backend** running on port 8000. 
+
+### A. The Frontend (Vite)
+The frontend serves as the interactive dashboard. Users type in a description of their data or the problem they are trying to solve (e.g., *"I want to predict customer churn based on past transaction history"*). It sends this description to the backend and dynamically renders the multi-faceted response, including the paradigm, confidence level, and a step-by-step roadmap.
+
+### B. The Backend API (FastAPI)
+The backend (`api/index.py`) exposes a `/api/predict` endpoint. It receives the text description, validates that it is not empty, and passes the text to the core intelligence module (`api/logic.py`). It also exposes a `/api/suggestions` endpoint to help users formulate their prompts.
+
+### C. The Core ML Intelligence (`api/logic.py`)
+This is the "brain" of the system. It processes the problem description using a sophisticated hybrid approach:
+
+#### Step 1: Statistical Text Classification (TF-IDF + Logistic Regression)
+At module initialization, the system trains a machine learning pipeline using a labeled dataset of over 500 business problem descriptions (`api/dataset.py`). 
+- **TF-IDF Vectorizer**: Converts the text into mathematical features (unigrams and bigrams), dampening overly common words.
+- **Logistic Regression**: A classifier trained to predict the probability of the text belonging to Supervised, Unsupervised, or Reinforcement Learning.
+
+#### Step 2: Rule-Based Keyword Engine
+As a parallel processing step, a rule-based engine scans the text for specific high-signal keywords.
+- *Supervised*: "predict", "labels", "target variable", "forecast".
+- *Unsupervised*: "cluster", "hidden", "unlabeled", "segment".
+- *Reinforcement*: "agent", "reward", "optimize", "policy".
+
+#### Step 3: Hybrid Decision Logic
+The system combines the statistical probabilities from Step 1 with the keyword scores from Step 2. 
+- If the TF-IDF confidence is high (≥ 60%), it trusts the statistical model.
+- If the statistical model is uncertain, it falls back to the keyword engine to act as a tie-breaker.
+- This ensures high accuracy even if users phrase their problems in unusual ways.
+
+#### Step 4: Entity Extraction
+Using Regular Expressions (Regex), the system parses the text to identify:
+1. **The Target**: What the user is trying to achieve (e.g., "customer churn").
+2. **The Data Source**: What data the user has available (e.g., "past transaction history").
+
+#### Step 5: Rich Output Generation
+Based on the decided paradigm and extracted entities, the system dynamically constructs a comprehensive response:
+- **Deep Justification:** A custom-generated paragraph explaining *why* this paradigm was chosen, referencing the extracted target and data.
+- **Why Not Other:** Explains why the other two paradigms would fail for this problem.
+- **Implementation Roadmap:** A specialized, 5-step technical roadmap (Data Ingestion, Engineering, Training, API, Monitoring) tailored to the specific paradigm, complete with tech-stack recommendations (e.g., Pandas, XGBoost, FastAPI).
+- **Complexity & Enhancements:** Analyzes the length/complexity of the prompt and suggests ways the user could provide more detail to get a better recommendation.
+
+The backend packages all this generated data into a JSON object and sends it back to the frontend to be displayed.
