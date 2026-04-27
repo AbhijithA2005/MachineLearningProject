@@ -1,0 +1,13 @@
+{
+  "name": "machine-learning-project-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack ML Paradigm Decision Support System",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd .. && rm -rf dist && mv frontend/dist ./dist",
+    "install-frontend": "cd frontend && npm install",
+    "dev": "python3 run_system.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
